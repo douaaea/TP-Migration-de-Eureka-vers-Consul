@@ -1,13 +1,40 @@
 server:
-  port: 8888
+  port: 8080
 
 spring:
   application:
-    name: Gateway
+    name: SERVICE-GATEWAY
   cloud:
-    discovery:
-      enabled: true
+    consul:
+      host: localhost
+      port: 8500
+      discovery:
+        enabled: true
+        instance-id: ${spring.application.name}:${random.value}
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: client-service
+          uri: lb://SERVICE-CLIENT
+          predicates:
+            - Path=/clients/**
+          filters:
+            - StripPrefix=1
 
-eureka:
-  instance:
-    hostname: localhost
+        - id: car-service
+          uri: lb://SERVICE-CAR
+          predicates:
+            - Path=/cars/**
+          filters:
+            - StripPrefix=1
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
